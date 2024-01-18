@@ -48,6 +48,7 @@ export default function App() {
     setToggleTambah(false);
   }
 
+  // handle update data nilai balance
   function handlePatungan(value) {
     setItems((items) =>
       items.map((item) =>
@@ -101,12 +102,15 @@ const FriendList = ({ newData, onSelection, selected }) => {
 };
 
 const List = ({ dataObj, onSelection, selected }) => {
+  // mengambil data berdasarkan id
   const isSelected = selected?.id === dataObj.id;
+
   return (
     <li className={isSelected ? "selected" : ""}>
       <img src={dataObj.image} alt={dataObj.name} />
       <h3>{dataObj.name}</h3>
 
+      {/* kondisi deskripsi tagihan */}
       {dataObj.balance < 0 && (
         <p className="red">
           Hutang Aku Ke {dataObj.name} Rp.
@@ -121,6 +125,7 @@ const List = ({ dataObj, onSelection, selected }) => {
       {dataObj.balance === 0 && <p>Nggak ada</p>}
 
       <Button onClick={() => onSelection(dataObj)}>
+        {/* kondisi value button */}
         {isSelected ? "Close" : "Select"}
       </Button>
     </li>
