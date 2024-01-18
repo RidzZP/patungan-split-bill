@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+// dummu data
 const initialFriends = [
   {
     id: 118836,
@@ -22,14 +23,21 @@ const initialFriends = [
 ];
 
 export default function App() {
+  // local state untuk menampung data baru
   const [items, setItems] = useState(initialFriends);
+
+  // toggle form tambah
   const [toggleTambah, setToggleTambah] = useState(false);
+
+  // toggle form patungan
   const [selected, setSelected] = useState(null);
 
+  // handle formTambah untuk menampilkan dan menghilangkan form
   function handleToggle() {
     setToggleTambah((toggleTambah) => !toggleTambah);
   }
 
+  // menambahkan item baru seperti biasa parameter(item) didapat dari props yang dikirimkan ke FormTambahTeman pada handleSubmit
   function handleTambah(item) {
     setItems((items) => [...items, item]);
   }
@@ -40,21 +48,38 @@ export default function App() {
     setToggleTambah(false);
   }
 
+  function handlePatungan(value) {
+    setItems((items) =>
+      items.map((item) =>
+        item.id === selected.id
+          ? { ...item, balance: item.balance + value }
+          : item
+      )
+    );
+  }
+
   return (
     <div className="app">
       <div className="sidebar">
+        {/* mengirimkan props items sebagai new data untuk menggantikan dummyData*/}
         <FriendList
           newData={items}
           onSelection={handleSelection}
           selected={selected}
         />
+
+        {/* pengkondisian toggle formTambah*/}
         {toggleTambah && <FormTambahTeman onTambah={handleTambah} />}
         <Button onClick={handleToggle}>
+          {/* pengkondisian value button */}
           {toggleTambah === true ? "Close" : "Tambah Teman"}
         </Button>
       </div>
 
-      {selected && <FormPatungan selected={selected} />}
+      {/* pengkondisian toggle formPatungan */}
+      {selected && (
+        <FormPatungan selected={selected} onPatungan={handlePatungan} />
+      )}
     </div>
   );
 }
@@ -84,12 +109,13 @@ const List = ({ dataObj, onSelection, selected }) => {
 
       {dataObj.balance < 0 && (
         <p className="red">
-          Hutang Aku Ke {dataObj.name} ${Math.abs(dataObj.balance)}
+          Hutang Aku Ke {dataObj.name} Rp.
+          {Math.abs(dataObj.balance.toLocaleString("id-ID"))}
         </p>
       )}
       {dataObj.balance > 0 && (
         <p className="green">
-          Hutang {dataObj.name} Ke Aku ${Math.abs(dataObj.balance)}
+          Hutang {dataObj.name} Ke Aku Rp.{Math.abs(dataObj.balance)}
         </p>
       )}
       {dataObj.balance === 0 && <p>Nggak ada</p>}
@@ -114,17 +140,22 @@ const FormTambahTeman = ({ onTambah }) => {
   const [image, setImage] = useState("https://i.pravatar.cc/48");
 
   function handleSubmit(e) {
+    // menggunakan e.preventDefault agar tidak refresh saat onSubmit
     e.preventDefault();
 
+    // deklarasi nilai state yang akan ditambahkan
     const id = crypto.randomUUID;
     const newData = { id, name, image: `${image}?=${id}`, balance: 0 };
 
+    // jika kondisi tidak terpenuhi maka kembalikan kosong/tidak melakukan apa apa
     if (!name && !image) return;
 
     console.log(newData);
 
+    // mengirimkan nilai state ke penampung state baru(items) lewat props newData
     onTambah(newData);
 
+    // set nilai state seperti semula ketika data berhasil disimpan
     setName("");
     setImage("");
   }
@@ -150,31 +181,53 @@ const FormTambahTeman = ({ onTambah }) => {
   );
 };
 
-const FormPatungan = ({ selected }) => {
+const FormPatungan = ({ selected, onPatungan }) => {
   const [tagihan, setTagihan] = useState("");
   const [payByUser, setPayByUser] = useState("");
+  const payByFriend = tagihan ? tagihan - payByUser : "";
   const [siapaBayar, setSiapaBayar] = useState("user");
 
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!tagihan || !payByUser) return;
+    onPatungan(siapaBayar === "user" ? payByFriend : -payByUser);
+  }
+
   return (
-    <form className="form-split-bill">
+    <form className="form-split-bill" onSubmit={handleSubmit}>
       <h2>Patungan Bersama {selected.name}</h2>
 
       <label>💰Jumlah Tagihan</label>
       <input
         type="text"
-        value={tagihan}
-        onChange={(e) => setTagihan(e.target.value)}
+        value={`Rp ${tagihan.toLocaleString("id-ID")}`}
+        onChange={(e) => {
+          const formattedValue = e.target.value.replace(/\D/g, "");
+          setTagihan(Number(formattedValue));
+        }}
       />
 
       <label>💰Tagihan Aku</label>
       <input
         type="text"
-        value={payByUser}
-        onChange={(e) => setPayByUser(e.target.value)}
+        value={`Rp ${payByUser.toLocaleString("id-ID")}`}
+        onChange={(e) => {
+          const formattedValue = e.target.value.replace(/\D/g, "");
+          setPayByUser(
+            Number(formattedValue) > tagihan
+              ? payByUser
+              : Number(formattedValue)
+          );
+        }}
       />
 
       <label>💰Tagihan {selected.name}</label>
-      <input type="text" disabled />
+      <input
+        type="text"
+        disabled
+        value={`Rp ${payByFriend.toLocaleString("id-ID")}`}
+      />
 
       <label>💰Mau Dibayarin Siapa?</label>
       <select
